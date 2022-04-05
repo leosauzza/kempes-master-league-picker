@@ -6,7 +6,7 @@ console.log('working');
 //put - enviar datos para actualizar un objeto existente
 //delete - eliminar
 const headers = new Headers({
-    'Authorization': 'Bearer token',
+    'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJQb2xpbGxhIiwiaWF0IjoxNjQ5MDQ0OTM2LCJleHAiOjE2NDkxMzEzMzZ9.dSmLMvrocSCe_NgPtkRHQ7vvD53eWtiR24ZFVaNvTofmB4rxxod-nAHsOIMv8uzpPFqzwWn5KW5KqKPK6aI7BQ',
     'Content-Type': 'application/json'
 });
 
@@ -23,29 +23,37 @@ const resultsDiv = document.getElementById('results');
 
 var results = [];
 
-function startProcess(){
-    resultsDiv.innerHTML = '';
+var promises = [];
+
+var resultsToShow = [];
+
+async function startProcess(){
+    // resultsDiv.innerHTML = '';
     results = [];
 
-    fetch('https://futpal-backend-prod.herokuapp.com/api/obtener-equipos-aprobados', config)
+    await fetch('https://futpal-backend-prod.herokuapp.com/api/obtener-equipos-aprobados', config)
     .then(response => response.json())
     .then(teams => getAllCovidPlayers(teams))
-    .then(console.log(results));
+    // .then(console.log(results));
 }
 
-function buttonAction(){
-    startProcess();
-    // var r =  startProcess().then(a => console.log(results));
-    // r.then(a => console.log(results))
+async function buttonAction(){
+    button.disabled = true;
+    loadingImg.style.visibility = 'visible';
+    await startProcess();
+    // button.disabled = false;
+    await Promise.all(promises).then( r => fillTeamsDropdown());
+    loadingImg.style.visibility = 'hidden';
+
 }
 
 function getAllCovidPlayers(teams){
     teams.forEach(team => {
-        getCovidPlayersByTeam(team.id, team.nombreEquipo);
+        promises.push(getCovidPlayersByTeam(team.id, team.nombreEquipo));
     });
 }
 function getCovidPlayersByTeam(teamId, teamName){
-    fetch('https://futpal-backend-prod.herokuapp.com/api/jugadores?equipoId='+teamId,config)
+    return fetch('https://futpal-backend-prod.herokuapp.com/api/jugadores?equipoId='+teamId,config)
     .then(response => response.json())
     .then(data => showPlayers(data,teamName))
 }
@@ -57,7 +65,6 @@ function showPlayers(playerList, teamName){
     for(let i = 0; i < matches; i++){
         const covidList = getCovidList(filteredList,covidPlayersQty);
         addToResults(teamName,i,covidList)
-        // printList(covidList, i,teamName);
     }
 
 }
@@ -127,7 +134,36 @@ function addToResults(teamName,matchNumber,covidList){
 
 }
 
+function fillTeamsDropdown(){
+    const teams = results.map(r => r.teamName).filter((value, index, self) => self.indexOf(value) === index);
+    const select = document.getElementById('teams');
+    teams.forEach(team => { 
+        var opt = document.createElement("option");
+        opt.value= team;
+        opt.innerHTML = team;
+        select.appendChild(opt);
+    })
+}
+
+function filterCovidPlayers(){
+    const selectedValue = this.value;
+    resultsToShow = results.filter(r => r.teamName == selectedValue);
+    showResults();
+}
+
+function showResults(){
+    resultsDiv.innerHTML = 'Jugadores con covid para el equipo '+ select.value + '<br>';
+    resultsToShow.forEach(player => {
+        resultsDiv.innerHTML += 'fecha: ' + player.matchNumber + ' nombre: ' + player.covidPlayerName + '<br>';
+    });
+}
+
+var select = document.getElementById('teams');
+select.onchange = filterCovidPlayers;
 
 var button = document.getElementById('results-button');
 button.onclick = buttonAction;
+
+var loadingImg = document.getElementById('loading-image');
+
 // startProcess();
