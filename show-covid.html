@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show Covid Results</title>
+</head>
+<body>
+    <h3>Insertar JSON de resultados</h3>
+    <textarea name="" id="jsonstring" style="width: 100%;" rows="30"></textarea>
+    <button type="button" id="button">Procesar JSON</button>
+    <select id="teams" style="visibility: hidden;">
+        <option value="0">Select a Team</option>
+    </select>
+    <h3 id="competitionTitle"></h3>
+    <div id="resultsDiv"></div>
+
+    <script src="show-covid.js"></script>
+</body>
+</html>

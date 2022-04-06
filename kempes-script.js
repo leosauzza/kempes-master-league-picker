@@ -6,7 +6,7 @@ console.log('working');
 //put - enviar datos para actualizar un objeto existente
 //delete - eliminar
 const headers = new Headers({
-    'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJQb2xpbGxhIiwiaWF0IjoxNjQ5MDQ0OTM2LCJleHAiOjE2NDkxMzEzMzZ9.dSmLMvrocSCe_NgPtkRHQ7vvD53eWtiR24ZFVaNvTofmB4rxxod-nAHsOIMv8uzpPFqzwWn5KW5KqKPK6aI7BQ',
+    'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJQb2xpbGxhIiwiaWF0IjoxNjQ5MjE1MTYwLCJleHAiOjE2NDkzMDE1NjB9.RSUWZrv0SdcbkKsLIRBitZQVJq1B0EcIZY3dZO_po1ehKoQsEsmDobNvHbrDO4fYeVyywD30knEDTcvLZB7t7w',
     'Content-Type': 'application/json'
 });
 
@@ -15,7 +15,7 @@ const config = {
     headers: headers
 };
 
-const matches = 15;
+var matches = 15;
 
 const covidPlayersQty = 3;
 
@@ -38,11 +38,24 @@ async function startProcess(){
 }
 
 async function buttonAction(){
+
+    if(!matchQtyInput.value || !competitionInput.value){
+        alert('Dale pelotudo');
+        return;
+    }
+
+    if(isNaN(matchQtyInput.value)){
+        alert('Dale pelotudo, pone bien la cantidad de partidos');
+        matchQtyInput.value = null;
+        return;
+    }
+    matches = matchQtyInput.value;
+    
     button.disabled = true;
     loadingImg.style.visibility = 'visible';
+
     await startProcess();
-    // button.disabled = false;
-    await Promise.all(promises).then( r => fillTeamsDropdown());
+    await Promise.all(promises).then( r => printJson());
     loadingImg.style.visibility = 'hidden';
 
 }
@@ -55,21 +68,20 @@ function getAllCovidPlayers(teams){
 function getCovidPlayersByTeam(teamId, teamName){
     return fetch('https://futpal-backend-prod.herokuapp.com/api/jugadores?equipoId='+teamId,config)
     .then(response => response.json())
-    .then(data => showPlayers(data,teamName))
+    .then(data => buildCovidPlayersList(data,teamName))
 }
 
-function showPlayers(playerList, teamName){
+function buildCovidPlayersList(playerList, teamName){
     const pList = buildListWithNameAndYear(playerList);
-    const filteredList = filterPlayers(pList);
+    const filteredList = filterPlayersByYear(pList);
 
     for(let i = 0; i < matches; i++){
         const covidList = getCovidList(filteredList,covidPlayersQty);
         addToResults(teamName,i,covidList)
     }
-
 }
 
-function filterPlayers(list){
+function filterPlayersByYear(list){
     const newList = list.filter(p => p.year < 2000);
     return newList
 }
@@ -134,36 +146,21 @@ function addToResults(teamName,matchNumber,covidList){
 
 }
 
-function fillTeamsDropdown(){
-    const teams = results.map(r => r.teamName).filter((value, index, self) => self.indexOf(value) === index);
-    const select = document.getElementById('teams');
-    teams.forEach(team => { 
-        var opt = document.createElement("option");
-        opt.value= team;
-        opt.innerHTML = team;
-        select.appendChild(opt);
-    })
+function printJson(){
+    var objResult = {
+        competition: competitionInput.value,
+        results: results
+    };
+    
+    resultsDiv.innerText = JSON.stringify(objResult);
 }
 
-function filterCovidPlayers(){
-    const selectedValue = this.value;
-    resultsToShow = results.filter(r => r.teamName == selectedValue);
-    showResults();
-}
-
-function showResults(){
-    resultsDiv.innerHTML = 'Jugadores con covid para el equipo '+ select.value + '<br>';
-    resultsToShow.forEach(player => {
-        resultsDiv.innerHTML += 'fecha: ' + player.matchNumber + ' nombre: ' + player.covidPlayerName + '<br>';
-    });
-}
-
-var select = document.getElementById('teams');
-select.onchange = filterCovidPlayers;
 
 var button = document.getElementById('results-button');
 button.onclick = buttonAction;
 
 var loadingImg = document.getElementById('loading-image');
 
+var competitionInput = document.getElementById('competition');
+var matchQtyInput = document.getElementById('matchQty')
 // startProcess();
